@@ -5,38 +5,44 @@ import { trpc } from "@/server/client";
 
 import { enter } from "@/lib/events";
 
-import { CompletionModel } from "@/components/shared/types";
+import { CompletionModel, Voice, VoiceModel } from "@/components/shared/types";
 
-import {
-  Button,
-  DropdownMenuTrigger,
-  Loading,
-  Textarea,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenu,
-} from "@/components";
+import { Button, Loading, Textarea } from "@/components";
 
-const completionModelsArray = Object.values(CompletionModel);
+const wizardPrompt = (prompt: string) => {
+  return `Answer to me like you are a Wizard from some fantasy world. 
+  
+  All modern questions should be answered like Wizard can see in future.
+
+  This is the question: ${prompt}
+  
+  Return the answer in nice html format, but don't change the design, just use paragraphs and lists if needed.`;
+};
 
 export default function OpenAICompletion() {
   const [prompt, setPrompt] = useState<string>("");
   const [aiResult, setAiResult] = useState<string>("");
+  const [aiVoice, setAiVoice] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const [selectedCompletionModel, setSelectedCompletionModel] =
-    useState<CompletionModel>(CompletionModel.GPT_3_5_TURBO);
 
   const getCompletion = trpc.gpt.completion.useMutation();
+  const voice = trpc.gpt.voice.useMutation();
 
   const handleChatGpt = async () => {
     try {
       setLoading(true);
       const completion = await getCompletion.mutateAsync({
-        prompt,
-        model: selectedCompletionModel,
+        prompt: wizardPrompt(prompt),
+        model: CompletionModel.GPT_3_5_TURBO,
+      });
+      const tts = await voice.mutateAsync({
+        prompt: completion,
+        model: VoiceModel.TTS_1,
+        voice: Voice.ECHO,
       });
       setLoading(false);
       setAiResult(completion);
+      setAiVoice(tts);
     } catch (e) {
       throw e;
     }
@@ -44,42 +50,29 @@ export default function OpenAICompletion() {
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">{selectedCompletionModel}</Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {completionModelsArray.map((model) => (
-            <DropdownMenuItem
-              key={model}
-              onClick={() => setSelectedCompletionModel(model)}
-              className={`${
-                selectedCompletionModel === model &&
-                "bg-gray-100 dark:bg-gray-800 dark:text-white "
-              }`}
-            >
-              {model}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
       <Textarea
         className="w-96 rounded-xl p-3"
         rows={4}
         value={prompt}
-        placeholder="Your prompt..."
+        placeholder="Ask me a question..."
         onChange={(e) => setPrompt(e.target.value)}
         onKeyDown={(e) => enter(e, handleChatGpt)}
       ></Textarea>
       <Button variant={"outline"} onClick={handleChatGpt}>
-        Get Completion
+        Ask
       </Button>
       {loading && <Loading />}
       {aiResult && (
         <div
-          className="mt-5 dark:text-white"
+          className="mt-5 p-20 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] dark:text-white"
           dangerouslySetInnerHTML={{ __html: aiResult }}
         />
+      )}
+      {aiVoice && (
+        <audio controls>
+          <source src={aiVoice} type={"audio/mpeg"} />
+          Your browser does not support the audio element.
+        </audio>
       )}
     </div>
   );
