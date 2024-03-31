@@ -31,6 +31,7 @@ export default function OpenAICompletion() {
   const handleChatGpt = async () => {
     try {
       setLoading(true);
+      setAiVoice("");
       const completion = await getCompletion.mutateAsync({
         prompt: wizardPrompt(prompt),
         model: CompletionModel.GPT_3_5_TURBO,
