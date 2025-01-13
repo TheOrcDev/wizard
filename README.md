@@ -45,4 +45,3 @@ On the index page of your application, locate the input field. Insert your desir
 Additionally, you can switch from text completion to image generation. To do this, click on the toggle to change the mode to "Image" and then click on the `Get Image` button. This will invoke the AI to generate an image based on the input.
 
 The Orcish AI Next.js Framework provides a seamless integration of AI capabilities into your Next.js applications, offering a versatile and user-friendly experience for generating both text and images.
-
